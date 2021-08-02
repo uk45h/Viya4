@@ -1,3 +1,3 @@
 data test;
-	set sashelp.class;
+	set sashelp.class(where=(sex='F'));
 run;
