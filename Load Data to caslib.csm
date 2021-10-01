@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<Snippet schemaVersion="1.0">
+
+	<Registration>
+		<Abbreviation></Abbreviation>
+		<Description></Description>
+		<Procedures></Procedures>
+		<Language>SAS</Language>
+		<Version></Version>
+	</Registration>
+
+	<CodeTemplate><![CDATA[/*****************************************************************************/
+/*  Load file from a client location ("pathToClientFile") into the specified */
+/*  caslib ("myCaslib") and save it as "tableNameForLoadedFile".             */
+/*****************************************************************************/
+
+proc casutil;
+	load file="pathToClientFile" 
+	outcaslib="myCaslib" casout="tableNameForLoadedFile";
+run;
+
+/*****************************************************************************/
+/*  Load SAS data set from a Base engine library (library.tableName) into    */
+/*  the specified caslib ("myCaslib") and save as "targetTableName".         */
+/*****************************************************************************/
+
+proc casutil;
+	load data=library.tablename outcaslib="myCaslib"
+	casout="targetTableName";
+run;
+
+/*****************************************************************************/
+/*  Load a table ("sourceTableName") from the specified caslib               */
+/*  ("sourceCaslib") to the target Caslib ("targetCaslib") and save it as    */
+/*  "targetTableName".                                                       */
+/*****************************************************************************/
+
+proc casutil;
+	load casdata="sourceTableName" incaslib="sourceCaslib" 
+	outcaslib="targetCaslib" casout="targetTableName";
+run;
+
+]]></CodeTemplate>
+
+</Snippet>
