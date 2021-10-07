@@ -50,24 +50,6 @@ data libcas.&sysuserid._dsby(copies=0 drop=expenses) ;
    if last.Product then output ;
 run ;
 
-/* Multi-threading behavior */
-data libcas.&sysuserid._dsmulti(copies=0 drop=expenses) ;
-   length max_expenses 8 ;
-   retain max_expenses 0 ;
-   set libcas.&sysuserid._merge_ds(keep=expenses) end=last ;
-   if expenses>max_expenses then max_expenses=expenses ;
-   if last then output ;
-run ;
-
-/* Single-threading behavior */
-data libcas.&sysuserid._dssingle(copies=0 drop=expenses) / single=yes ;
-   length max_expenses 8 ;
-   retain max_expenses 0 ;
-   set libcas.&sysuserid._merge_ds(keep=expenses) end=last ;
-   if expenses>max_expenses then max_expenses=expenses ;
-   if last then output ;
-run ;
-
 /* FedSQL Join and Aggregation */
 proc fedsql sessref=mySession _method ;
    create table dataproc.&sysuserid._join_agg_fed {options replace=true replication=0} as
@@ -96,7 +78,10 @@ proc cas ;
       id={"Product"}
       casOut={caslib="dataproc",name="&sysuserid._agg_tr",replace=true,replication=0} ;
 quit ;
-
+/* proc transpose data=libcas.&sysuserid._join_agg_fed out=work.&sysuserid._agg_tr; */
+/* 	by Product; */
+/* 	var revenue; */
+/* run; */
 
 /* Create format */
 proc format casfmtlib="userformats1" ;
