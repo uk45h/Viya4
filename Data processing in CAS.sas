@@ -60,14 +60,21 @@ proc fedsql sessref=mySession _method ;
    group by Date, Product ;
 quit ;
 
-/* find rdbms */
-/* caslib pg datasource=(srctype="postgres",user="sas",password="lnxsas",server="gel-postgresql.postgres.svc.cluster.local",database="dvdrental",schema="public") ; */
-/*  */
-/* proc fedsql sessref=mySession _method ; */
-/*    create table dataproc.&sysuserid._fed_pt{options replace=true replication=0} as */
-/*    select customer.first_name, customer.last_name, address.address */
-/*    from pg."customer" as customer, pg."address" as address where customer.address_id=address.address_id ; */
-/* quit ; */
+/* Sample RDBMS */
+
+caslib pg desc='PostgreSQL Caslib' 
+     dataSource=(srctype='postgres'
+                 server='sas-crunchy-data-postgres'
+                 authdomain='pglocal'
+                 database="postgres"
+					schema="public"
+                 );
+
+proc fedsql sessref=mySession _method ;
+   create table dataproc.&sysuserid._fed_pt{options replace=true replication=0} as
+   select customer.first_name, customer.last_name, address.address
+   from pg."customer" as customer, pg."address" as address where customer.address_id=address.address_id ;
+quit ;
 
 
 /* Table Transposition */
@@ -78,10 +85,7 @@ proc cas ;
       id={"Product"}
       casOut={caslib="dataproc",name="&sysuserid._agg_tr",replace=true,replication=0} ;
 quit ;
-/* proc transpose data=libcas.&sysuserid._join_agg_fed out=work.&sysuserid._agg_tr; */
-/* 	by Product; */
-/* 	var revenue; */
-/* run; */
+
 
 /* Create format */
 proc format casfmtlib="userformats1" ;
