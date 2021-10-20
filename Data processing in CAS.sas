@@ -1,4 +1,4 @@
-cas mySession terminate;
+/* cas mySession terminate; */
 cas mySession sessopts=(metrics=true messagelevel=all) ;
 
 %put My Userid is: &sysuserid ;
