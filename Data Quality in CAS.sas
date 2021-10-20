@@ -4,19 +4,19 @@ cas mySession sessopts=(metrics=true messagelevel=all) ;
 
 options msglevel=i ;
 
-caslib dataproc datasource=(srctype=path) path="/gelcontent/demo/DM/data/SAMPLE" ;
+caslib dataproc datasource=(srctype=path) path="/mnt/viya-share/megacorp" ;
 
 libname libcas cas caslib="dataproc" ;
 
 /* Load the customers table from the new dataproc caslib */
 proc casutil ;
    load casdata="customers.sashdat" incaslib="dataproc" outcaslib="dataproc" 
-		casout="&sysuserid._customers" copies=0 replace ;
+		casout="customers" copies=0 replace ;
 quit ;
 
-data libcas.&sysuserid._customers_dq(copies=0) ;
+data libcas.customers_dq(copies=0) ;
    length mcName mcAddress stdName varchar(50) stdState $ 2 ;
-   set libcas.&sysuserid._customers ;
+   set libcas.customers ;
    stdState=dqStandardize(state,'State/Province (Abbreviation)','ENUSA');
    stdName=dqStandardize(name,'Name','ENUSA');
    mcName=dqMatch(name,'Name',85,'ENUSA') ;
@@ -27,36 +27,40 @@ run ;
 proc cas ;
    entityRes.match /
       clusterId="clusterID"
-      inTable={caslib="dataproc",name="&sysuserid._customers_dq"}
+      inTable={caslib="dataproc",name="customers_dq"}
       columns={"stdName","address","mcName","mcAddress"}
       matchRules={{
          rule = { { columns = { "mcName" , "mcAddress" } } }
       }}
       nullValuesMatch=false
       emptyStringIsNull=true
-      outTable={caslib="dataproc",name="&sysuserid._customers_clustered",replace=true} ;
+      outTable={caslib="dataproc",name="customers_clustered",replace=true} ;
 quit ;
 
-
-/* Profile and Identity analysis */
-proc cas;
-   dataDiscovery.profile /
-      algorithm="PRIMARY"
-      table={caslib="dataproc" name="&sysuserid._customers"}
-      columns={"state"}
-      multiIdentity=true
-      locale="ENUSA"
-      qkb="QKB CI 32"
-      identities= {
-         {pattern=".*", type="*", definition="Field Content", prefix="QKB_"}
-      }
-      cutoff=20
-      frequencies=10
-      outliers=5
-      casOut={caslib="dataproc" name="&sysuserid._customers_profiled" replace=true replication=0}
-   ;
-   table.fetch /
-      table={caslib="dataproc" name="&sysuserid._customers_profiled"} to=200 ;
-quit ;
+data work.customers_dq;
+	set libcas.customers_dq;
+run;
+proc dqmatch data=work.customers_dq out=work.customers_clustered cluster=clusterID;
+	criteria condition=1 var=mcName exact;
+	criteria condition=1 var=mcAddress exact;
+run;
+proc sql;
+	select count(*) from (
+		select clusterID, count(*) as ile 
+			from work.customers_clustered 
+			where missing(clusterID)=0
+			group by 1 
+			having count(*)>1
+	) as sq;
+quit;
+proc fedsql sessref=mysession;
+	select count(*) from (
+		select clusterID, count(*) as ile 
+			from dataproc.customers_clustered 
+			where missing(clusterID)=0
+			group by 1 
+			having count(*)>1
+	) as sq;
+quit;
 
 cas mySession terminate ;
